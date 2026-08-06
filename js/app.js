@@ -1,4 +1,3 @@
-
 // ═══════════════════════════════════════════════════
 // DM CREDENTIALS  (username → password, markets[])
 // ═══════════════════════════════════════════════════
@@ -61,7 +60,6 @@ function doLogin() {
   }
   err.classList.remove('show');
   currentUser = { ...user, key };
-  sessionStorage.setItem('pbr_user', JSON.stringify({...user, key}));
 
   // hide login, show dashboard
   document.getElementById('loginPage').style.display = 'none';
@@ -258,6 +256,9 @@ function renderCharts() {
     };
   }).sort((a,b)=>(b.dcs+b.recent)-(a.dcs+a.recent)).slice(0,12);
 
+  const dcsLbl = (window._dynamicLabels && window._dynamicLabels.dcs) || '27th';
+  const recentLbl = (window._dynamicLabels && window._dynamicLabels.recent) || '28th';
+
   if (mChart) mChart.destroy();
   mChart = new Chart(document.getElementById('chartMarket'), {
     type: 'bar',
@@ -265,8 +266,8 @@ function renderCharts() {
       labels: mktData.map(d=>d.m),
       datasets: [
         { label: 'Act Target',      data: mktData.map(d=>d.target), backgroundColor: 'rgba(124,92,252,.75)',  borderRadius: 3 },
-        { label: 'DCS Acts (27th)', data: mktData.map(d=>d.dcs),    backgroundColor: 'rgba(24,184,154,.8)', borderRadius: 3 },
-        { label: 'Acts 28–29th',    data: mktData.map(d=>d.recent), backgroundColor: 'rgba(251,155,61,.85)', borderRadius: 3 }
+        { label: 'DCS Acts (' + dcsLbl + ')', data: mktData.map(d=>d.dcs),    backgroundColor: 'rgba(24,184,154,.8)', borderRadius: 3 },
+        { label: 'Acts (' + recentLbl + ')',    data: mktData.map(d=>d.recent), backgroundColor: 'rgba(251,155,61,.85)', borderRadius: 3 }
       ]
     },
     options: {
@@ -442,31 +443,6 @@ function handleFile(evt) {
   evt.target.value = '';
 }
 
-
-// ── SESSION PERSISTENCE (refresh keeps user logged in) ──────────────────
-function restoreSession() {
-  const saved = sessionStorage.getItem('pbr_user');
-  if (!saved) return;
-  try {
-    const user = JSON.parse(saved);
-    const cred = DM_CREDENTIALS[user.key];
-    if (!cred) { sessionStorage.removeItem('pbr_user'); return; }
-    currentUser = user;
-    document.getElementById('loginPage').style.display = 'none';
-    document.getElementById('mainHdr').style.display   = '';
-    document.getElementById('userBadge').style.display = '';
-    document.getElementById('userName').textContent    = user.name;
-    document.getElementById('userAvatar').textContent  = user.name.charAt(0).toUpperCase();
-    document.getElementById('update-lbl').textContent  =
-      user.role === 'admin' ? 'All markets — Admin' : 'My markets only';
-    updateTabCounts();
-    populateDropdowns();
-    const el = document.getElementById('s-quotaAttain');
-    if (el) el.textContent = ' ▼';
-    applyFilters();
-  } catch(e) { sessionStorage.removeItem('pbr_user'); }
-}
-
 // ── 80% CALCULATOR ───────────────────────────────────────────────────────
 function populateCalcMarkets() {
   const sel = document.getElementById('calcMarketSel');
@@ -542,10 +518,15 @@ function runCalc() {
 // LIVE DATA LOADING
 // This dashboard no longer ships with an embedded SEED dataset. On
 // boot it fetches the current PBR/ANA rows from the Google Apps
-// Script API configured in config.js. The API returns a flat JSON
-// array of row objects in the exact same shape the in-browser Excel
-// importer already produces (see handleFile() above), so every
-// existing render / filter / sort function keeps working unchanged.
+// Script API configured in config.js. The API returns { rows, labels }
+// where rows is a flat JSON array of row objects in the exact same
+// shape the in-browser Excel importer already produces (see
+// handleFile() above), so every existing render / filter / sort
+// function keeps working unchanged. labels carries the live
+// reporting-date text pulled straight from the sheet's own column
+// headers (e.g. "27th", "28th") so the on-screen table headers and
+// chart title/legend stay in sync automatically — no code edits
+// needed each reporting period.
 //
 // A copy of the last successful payload is cached in localStorage so
 // the dashboard still opens with the most recent data if the network
@@ -553,9 +534,9 @@ function runCalc() {
 // ═══════════════════════════════════════════════════
 const LIVE_CACHE_KEY = 'pbrDashboard.cachedData.v1';
 
-function cacheDataLocally(rows){
+function cacheDataLocally(rows, labels){
   try{
-    localStorage.setItem(LIVE_CACHE_KEY, JSON.stringify(rows));
+    localStorage.setItem(LIVE_CACHE_KEY, JSON.stringify({ rows: rows, labels: labels || null }));
     localStorage.setItem(LIVE_CACHE_KEY+'.savedAt', new Date().toISOString());
   }catch(err){
     console.warn('Could not cache data locally (localStorage full or unavailable):', err);
@@ -572,16 +553,42 @@ function loadCachedData(){
 }
 
 /**
- * Fetches the current PBR/ANA rows from the Apps Script Web App
- * configured in config.js. Falls back to the last locally-cached
- * copy if the request fails. Throws only if neither a live fetch nor
- * a cached copy is available.
+ * Updates the table headers (DCS Acts / Acts / Trending Act) and the
+ * market chart title/legend with the live date text pulled from the
+ * PBR sheet's own column headers. Safe no-op if labels is null (e.g.
+ * old cached payload from before this feature existed).
+ */
+function applyColumnLabels(labels){
+  if(!labels) return;
+  const dcs = labels.dcsActs || '27th';
+  const recent = labels.recentActs || '28th';
+  const trending = labels.trendingAct || recent;
+  window._dynamicLabels = { dcs: dcs, recent: recent, trending: trending };
+
+  const dcsTh = document.getElementById('th-dcsActs');
+  if(dcsTh && dcsTh.childNodes[0]) dcsTh.childNodes[0].nodeValue = 'DCS Acts (' + dcs + ') ';
+
+  const recentTh = document.getElementById('th-recentActs');
+  if(recentTh && recentTh.childNodes[0]) recentTh.childNodes[0].nodeValue = 'Acts (' + recent + ') ';
+
+  const trendingTh = document.getElementById('th-trendingAct');
+  if(trendingTh && trendingTh.childNodes[0]) trendingTh.childNodes[0].nodeValue = 'Trending Act (' + trending + ') ';
+
+  const chartTtl = document.getElementById('chartMarketTtl');
+  if(chartTtl) chartTtl.textContent = 'Act Target vs DCS Acts (' + dcs + ') vs Acts (' + recent + ') by Market';
+}
+
+/**
+ * Fetches the current PBR/ANA rows (plus live column labels) from the
+ * Apps Script Web App configured in config.js. Falls back to the last
+ * locally-cached copy if the request fails. Throws only if neither a
+ * live fetch nor a cached copy is available.
  */
 async function loadLiveData(){
   const url = (typeof CONFIG !== 'undefined' && CONFIG.DATA_SOURCE_URL) ? CONFIG.DATA_SOURCE_URL : '';
   if(!url || url.includes('YOUR_DEPLOYMENT_ID')){
     const cached = loadCachedData();
-    if(cached){ console.warn('CONFIG.DATA_SOURCE_URL is not set — showing last cached data.'); return cached; }
+    if(cached){ console.warn('CONFIG.DATA_SOURCE_URL is not set — showing last cached data.'); applyColumnLabels(cached.labels); return cached.rows; }
     throw new Error('CONFIG.DATA_SOURCE_URL is not set. Open config.js and paste in your Apps Script Web App URL.');
   }
   try{
@@ -589,13 +596,17 @@ async function loadLiveData(){
     if(!res.ok) throw new Error('API responded with status '+res.status);
     const payload = await res.json();
     if(payload && payload.error) throw new Error(payload.message || 'API returned an error.');
-    if(!Array.isArray(payload)) throw new Error('API response was not a row array.');
-    cacheDataLocally(payload);
-    return payload;
+    // Supports both the new { rows, labels } shape and the old plain-array shape.
+    const rows = Array.isArray(payload) ? payload : payload.rows;
+    if(!Array.isArray(rows)) throw new Error('API response was not a row array.');
+    const labels = (payload && !Array.isArray(payload) && payload.labels) ? payload.labels : null;
+    cacheDataLocally(rows, labels);
+    applyColumnLabels(labels);
+    return rows;
   }catch(err){
     console.error('Live data fetch failed, falling back to cached copy:', err);
     const cached = loadCachedData();
-    if(cached) return cached;
+    if(cached){ applyColumnLabels(cached.labels); return cached.rows; }
     throw err;
   }
 }
