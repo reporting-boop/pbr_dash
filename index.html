@@ -148,7 +148,7 @@
 
   <div class="charts-row">
     <div class="chart-card">
-      <div class="chart-ttl">Act Target vs DCS Acts (27th) vs Acts 28–29th by Market</div>
+      <div class="chart-ttl" id="chartMarketTtl">Act Target vs DCS Acts (27th) vs Acts 28–29th by Market</div>
       <div style="position:relative;height:220px"><canvas id="chartMarket" role="img" aria-label="Quota attainment by market"></canvas></div>
     </div>
     <div class="chart-card">
@@ -177,11 +177,11 @@
         <th onclick="sortBy('doorCode')">Door Code <span id="s-doorCode"></span></th>
         <th onclick="sortBy('store')" style="min-width:160px">RT Store <span id="s-store"></span></th>
         <th onclick="sortBy('actTarget')">Act Target <span id="s-actTarget"></span></th>
-        <th onclick="sortBy('dcsActs')">DCS Acts (27th) <span id="s-dcsActs"></span></th>
-        <th onclick="sortBy('recentActs')">Acts 28–29th <span id="s-recentActs"></span></th>
+        <th onclick="sortBy('dcsActs')" id="th-dcsActs">DCS Acts (27th) <span id="s-dcsActs"></span></th>
+        <th onclick="sortBy('recentActs')" id="th-recentActs">Acts 28–29th <span id="s-recentActs"></span></th>
         <th onclick="sortBy('totalActs')">Total Acts <span id="s-totalActs"></span></th>
         <th onclick="sortBy('quotaAttain')">Quota % <span id="s-quotaAttain"></span></th>
-        <th onclick="sortBy('trendingAct')">Trending Act <span id="s-trendingAct"></span></th>
+        <th onclick="sortBy('trendingAct')" id="th-trendingAct">Trending Act <span id="s-trendingAct"></span></th>
         <th onclick="sortBy('trendPct')">Trending % <span id="s-trendPct"></span></th>
         <th onclick="sortBy('dailyNeeded100')">Daily Needed (100%) <span id="s-dailyNeeded100"></span></th>
         <th onclick="sortBy('dailyNeeded110')">Daily Needed (110%) <span id="s-dailyNeeded110"></span></th>
