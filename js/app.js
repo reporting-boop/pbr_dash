@@ -635,7 +635,6 @@ function startAutoRefresh(){
 async function boot(){
   try{
     allData = await loadLiveData();
-    restoreSession();
     startAutoRefresh();
   }catch(err){
     console.error('Failed to load PBR/ANA data', err);
