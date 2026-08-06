@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PBR Dashboard — May 2026</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<link rel="stylesheet" href="css/style.css">
+
+</head>
+<body>
+
+<div id="loading-overlay" style="position:fixed;inset:0;background:#f4f5fb;z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;font-family:'Segoe UI',system-ui,sans-serif;">
+  <div style="width:38px;height:38px;border:3px solid #e4e2f5;border-top-color:#7c5cfc;border-radius:50%;animation:pbrspin .8s linear infinite;"></div>
+  <span style="color:#6b6b85;font-weight:600;font-size:14px;">Loading dashboard data…</span>
+</div>
+<style>@keyframes pbrspin{to{transform:rotate(360deg)}}</style>
+
+<!-- ═══ LOGIN PAGE ═══ -->
+<div id="loginPage">
+  <div class="login-box">
+    <div class="login-logo">
+      <div style="background:#fff;border-radius:16px;padding:14px 22px;display:inline-flex;align-items:center;justify-content:center;box-shadow:0 4px 18px rgba(20,20,43,.15);margin-bottom:2px"><img src="data:image/png;base64,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" style="height:64px;width:auto;display:block" alt="Metro by T-Mobile"></div>
+      <span class="login-title">PBR DASHBOARD</span>
+    </div>
+    <div class="login-sub">Enter your credentials to access your data</div>
+    <div class="login-field">
+      <label>Username</label>
+      <input type="text" id="loginUser" placeholder="Your name" autocomplete="off" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <div class="login-field">
+      <label>Password</label>
+      <div style="position:relative">
+        <input type="password" id="loginPass" placeholder="Password" onkeydown="if(event.key==='Enter')doLogin()" style="width:100%;padding-right:44px">
+        <button type="button" onclick="togglePass()" id="togglePassBtn"
+          style="position:absolute;right:0;top:0;height:100%;width:42px;background:none;border:none;cursor:pointer;color:var(--muted);font-size:16px;display:flex;align-items:center;justify-content:center;border-radius:0 8px 8px 0;transition:.15s"
+          onmouseenter="this.style.color='#14142b'" onmouseleave="this.style.color='var(--muted)'"
+          title="Show / hide password">
+          <span id="eyeIcon">👁</span>
+        </button>
+      </div>
+    </div>
+    <button class="login-btn" onclick="doLogin()">Sign In</button>
+    <div class="login-err" id="loginErr">Invalid username or password. Please try again.</div>
+  </div>
+</div>
+
+
+<div class="hdr" id="mainHdr" style="display:none">
+  <div class="brand">
+    <div style="background:#fff;border-radius:9px;padding:3px 8px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 10px rgba(20,20,43,.12)"><img src="data:image/png;base64,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" style="height:30px;width:auto;display:block" alt="Metro by T-Mobile"></div>
+    <div>
+      <div class="brand-name">PBR DASHBOARD</div>
+      <div class="brand-sub">Activation Performance · May 2026</div>
+    </div>
+  </div>
+  <div class="hdr-right">
+    <div class="tabs">
+      <button class="tab active" id="tab-PBR" onclick="switchTab('PBR')">PBR <span id="cnt-PBR" style="opacity:.65;font-size:10px"></span></button>
+      <button class="tab" id="tab-ANA" onclick="switchTab('ANA')">ANA <span id="cnt-ANA" style="opacity:.65;font-size:10px"></span></button>
+    </div>
+    <label class="upload-btn" for="fileInput">&#8593; Import Excel<input type="file" id="fileInput" accept=".xlsx,.xls" onchange="handleFile(event)"></label>
+    <div id="userBadge" style="display:none" class="user-badge"><div class="user-avatar" id="userAvatar"></div><span id="userName"></span><button class="logout-btn" onclick="doLogout()">Sign out</button></div>
+    <div class="live-badge"><div class="live-dot"></div><span id="update-lbl">May 2026 data</span></div>
+  </div>
+</div>
+
+<div class="main">
+  <div class="filter-bar">
+    <div class="filter-group"><span class="filter-label">Market</span>
+      <select id="f-market" onchange="applyFilters()"><option value="">All Markets</option></select>
+    </div>
+    <div class="filter-group"><span class="filter-label">District</span>
+      <select id="f-district" onchange="applyFilters()"><option value="">All Districts</option></select>
+    </div>
+    <div class="filter-group"><span class="filter-label">Attainment</span>
+      <select id="f-attain" onchange="applyFilters()">
+        <option value="">All</option>
+        <option value="125+">≥ 125%</option>
+        <option value="100-125">100–124%</option>
+        <option value="75-100">75–99%</option>
+        <option value="<75">Below 75%</option>
+      </select>
+    </div>
+    <div class="filter-group"><span class="filter-label">Retain Status</span>
+      <select id="f-retain" onchange="applyFilters()">
+        <option value="">All</option>
+        <option value="Greater">Greater</option>
+        <option value="Less">Less</option>
+      </select>
+    </div>
+    <div class="filter-group"><span class="filter-label">Payout</span>
+      <select id="f-payout" onchange="applyFilters()">
+        <option value="">All</option>
+        <option value="3000">$3,000</option>
+        <option value="1200">$1,200</option>
+        <option value="variable">Variable</option>
+        <option value="0">$0 / None</option>
+      </select>
+    </div>
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="f-search" placeholder="Search store, door code, market…" oninput="applyFilters()">
+    </div>
+    <button class="reset-btn" onclick="resetFilters()">Reset</button>
+  </div>
+
+  <div class="kpi-grid" id="kpiGrid"></div>
+
+
+  <!-- ═══ 80% ACTS NEEDED CALCULATOR ═══ -->
+  <div class="calc-panel" id="calcPanel">
+    <div class="calc-header">
+      <div class="calc-title">
+        🎯 Acts Needed Calculator
+        <span class="calc-badge">LIVE</span>
+      </div>
+      <div class="calc-controls">
+        <div class="calc-pct-wrap">
+          <label>Target %</label>
+          <input type="number" id="calcPct" class="calc-pct-input" value="80" min="1" max="200" step="1">
+        </div>
+        <select id="calcMarketSel" class="calc-market-sel">
+          <option value="">Current filter (all)</option>
+        </select>
+        <button class="calc-run-btn" onclick="runCalc()">▶ Run</button>
+      </div>
+    </div>
+    <div class="calc-summary" id="calcSummary" style="display:none"></div>
+    <div class="calc-table-wrap">
+      <table class="calc-table">
+        <thead><tr>
+          <th>Market</th><th>Store</th><th>Act Target</th><th>Total Acts</th>
+          <th>Threshold<br><small id="calcPctLabel" style="opacity:.65;font-size:10px">(Target × 80%)</small></th>
+          <th>Acts Needed</th>
+          <th>Daily Needed<br><small id="calcDaysLabel" style="opacity:.65;font-size:10px">÷ remaining days</small></th>
+          <th>Status</th>
+        </tr></thead>
+        <tbody id="calcBody">
+          <tr><td colspan="8" style="text-align:center;color:var(--muted);padding:24px">
+            Choose a % target, optionally filter by market, then click ▶ Run
+          </td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="charts-row">
+    <div class="chart-card">
+      <div class="chart-ttl">Act Target vs DCS Acts (27th) vs Acts 28–29th by Market</div>
+      <div style="position:relative;height:220px"><canvas id="chartMarket" role="img" aria-label="Quota attainment by market"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-ttl">Attainment Breakdown</div>
+      <div style="position:relative;height:220px"><canvas id="chartDist" role="img" aria-label="Attainment distribution donut"></canvas></div>
+    </div>
+  </div>
+
+  <div class="tbl-wrap">
+    <div class="tbl-hdr">
+      <span class="tbl-ttl" id="tblTitle">Store Performance</span>
+      <div style="display:flex;align-items:center;gap:10px">
+        <div class="perpage"><span>Rows:</span>
+          <select id="perPage" onchange="page=1;renderTable()">
+            <option value="25">25</option><option value="50">50</option><option value="100">100</option><option value="9999">All</option>
+          </select>
+        </div>
+        <span class="tbl-cnt" id="tblCnt">—</span>
+      </div>
+    </div>
+    <div class="scroll-x">
+    <table>
+      <thead><tr>
+        <th onclick="sortBy('market')">Market <span id="s-market"></span></th>
+        <th onclick="sortBy('district')">District <span id="s-district"></span></th>
+        <th onclick="sortBy('doorCode')">Door Code <span id="s-doorCode"></span></th>
+        <th onclick="sortBy('store')" style="min-width:160px">RT Store <span id="s-store"></span></th>
+        <th onclick="sortBy('actTarget')">Act Target <span id="s-actTarget"></span></th>
+        <th onclick="sortBy('dcsActs')">DCS Acts (27th) <span id="s-dcsActs"></span></th>
+        <th onclick="sortBy('recentActs')">Acts 28–29th <span id="s-recentActs"></span></th>
+        <th onclick="sortBy('totalActs')">Total Acts <span id="s-totalActs"></span></th>
+        <th onclick="sortBy('quotaAttain')">Quota % <span id="s-quotaAttain"></span></th>
+        <th onclick="sortBy('trendingAct')">Trending Act <span id="s-trendingAct"></span></th>
+        <th onclick="sortBy('trendPct')">Trending % <span id="s-trendPct"></span></th>
+        <th onclick="sortBy('dailyNeeded100')">Daily Needed (100%) <span id="s-dailyNeeded100"></span></th>
+        <th onclick="sortBy('dailyNeeded110')">Daily Needed (110%) <span id="s-dailyNeeded110"></span></th>
+        <th onclick="sortBy('dailyNeeded125')">Daily Needed (125%) <span id="s-dailyNeeded125"></span></th>
+        <th onclick="sortBy('retention')">Retention % <span id="s-retention"></span></th>
+        <th onclick="sortBy('retTarget')">Ret Target % <span id="s-retTarget"></span></th>
+        <th onclick="sortBy('retainStatus')">Retain Status <span id="s-retainStatus"></span></th>
+        <th onclick="sortBy('actsNeeded100')">Acts Needed (100%) <span id="s-actsNeeded100"></span></th>
+        <th onclick="sortBy('actsNeeded110')">Acts Needed (110%) <span id="s-actsNeeded110"></span></th>
+        <th onclick="sortBy('actsNeeded125')">Acts Needed (125%) <span id="s-actsNeeded125"></span></th>
+        <th onclick="sortBy('payout')">Payout <span id="s-payout"></span></th>
+      </tr></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+    </div>
+    <div class="pagination">
+      <span class="pag-info" id="pagInfo"></span>
+      <div class="pag-btns">
+        <button class="pag-btn" id="prevBtn" onclick="changePage(-1)">◀ Prev</button>
+        <button class="pag-btn" id="nextBtn" onclick="changePage(1)">Next ▶</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- Only file you should need to edit after deployment -->
+<script src="config.js"></script>
+
+<script src="js/app.js"></script>
+</body>
+</html>
